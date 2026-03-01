@@ -1,0 +1,30 @@
+# Target
+CONFIG_IDF_TARGET="esp32c6"
+
+# USB Serial/JTAG driver (the only USB peripheral on ESP32-C6)
+# Note: VID=0x303A PID=0x1001 (Espressif fixed, cannot be changed to P8 IDs)
+# Configure libCEC/cec-client to use the port directly, e.g.:
+#   cec-client -t p /dev/ttyACM0
+CONFIG_USB_OTG_SUPPORTED=n
+
+# Route the ESP-IDF console to UART0 (not USB) so the USB port is
+# exclusively available for the P8 binary protocol.
+#
+# IMPORTANT: by default ESP-IDF also enables a *secondary* console on USB
+# Serial/JTAG. That secondary output would corrupt the binary P8 stream.
+# Disable it explicitly:
+CONFIG_ESP_CONSOLE_UART_DEFAULT=y
+CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG=n
+CONFIG_ESP_CONSOLE_SECONDARY_NONE=y
+
+# FreeRTOS: 1ms tick for finer scheduling
+CONFIG_FREERTOS_HZ=1000
+
+# Allow longer watchdog timeout (CEC frames can be ~400ms)
+CONFIG_ESP_TASK_WDT_TIMEOUT_S=30
+
+# NVS for persisting P8 settings
+CONFIG_NVS_ENCRYPTION=n
+
+# Higher timer resolution for CEC bit-bang timing
+CONFIG_ESP_TIMER_SUPPORTS_ISR_DISPATCH_METHOD=y
