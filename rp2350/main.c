@@ -3,7 +3,7 @@
  *
  * Wiring
  * ======
- *   HDMI CEC pin → GPIO29 (XIAO RP2350 pad D3)
+ *   HDMI CEC pin → GPIO5 (XIAO RP2350 pad D3)
  *   No external pull-up required — internal pull-up enabled in firmware.
  *   An optional external 27kΩ (in parallel → ~18kΩ) improves signal quality
  *   on long cable runs.
@@ -31,7 +31,7 @@
  *
  * XIAO RP2350 GPIO map (relevant pads)
  * =====================================
- *   D0=GPIO26  D1=GPIO27  D2=GPIO28  D3=GPIO29  D4=GPIO6
+ *   D0=GPIO26  D1=GPIO27  D2=GPIO28  D3=GPIO5   D4=GPIO6
  *   D5=GPIO7   D6=GPIO0   D7=GPIO1   D8=GPIO2   D9=GPIO4  D10=GPIO3
  */
 
@@ -42,8 +42,8 @@
 #include "p8_protocol.h"
 #include "flash_kv.h"
 
-/* CEC GPIO: XIAO RP2350 pad D3 = GPIO29. */
-#define CEC_GPIO  29
+/* CEC GPIO: XIAO RP2350 pad D3 = GPIO5. */
+#define CEC_GPIO  5
 
 /* ------------------------------------------------------------------ */
 /* CEC receive callback → forward to P8 protocol                       */
