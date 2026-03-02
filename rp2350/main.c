@@ -46,10 +46,50 @@
 #define CEC_GPIO  5
 
 /* ------------------------------------------------------------------ */
+/* Wake-on-CEC filter                                                  */
+/* ------------------------------------------------------------------ */
+
+/*
+ * CEC opcodes that should wake the host (mirrors real P8 autonomous mode):
+ *   0x44  User Control Pressed — only power-related UI commands
+ *   0x86  Set Stream Path      — only when our physical address is the target
+ */
+#define CEC_OP_USER_CTRL_PRESSED  0x44
+#define CEC_OP_SET_STREAM_PATH    0x86
+#define CEC_UI_POWER              0x40   /* Power toggle */
+#define CEC_UI_POWER_ON_FUNC      0x6D   /* Power On Function */
+
+static bool should_wake(const cec_frame_t *frame) {
+    if (frame->len < 2) return false;
+    uint8_t opcode = frame->data[1];
+
+    if (opcode == CEC_OP_USER_CTRL_PRESSED && frame->len >= 3) {
+        uint8_t ui = frame->data[2];
+        return ui == CEC_UI_POWER || ui == CEC_UI_POWER_ON_FUNC;
+    }
+
+    if (opcode == CEC_OP_SET_STREAM_PATH && frame->len >= 4) {
+        uint16_t path_pa = ((uint16_t)frame->data[2] << 8) | frame->data[3];
+        uint16_t our_pa  = flash_kv_get_u16("phys_addr", 0x1000);
+        return path_pa == our_pa;
+    }
+
+    return false;
+}
+
+/* ------------------------------------------------------------------ */
 /* CEC receive callback → forward to P8 protocol                       */
 /* ------------------------------------------------------------------ */
 
 static void on_cec_frame(const cec_frame_t *frame) {
+    if (tud_suspended()) {
+        /* PC is asleep — only wake for power/routing commands, matching
+         * the real P8 adapter's autonomous mode behaviour. */
+        if (should_wake(frame)) {
+            tud_remote_wakeup();
+        }
+        return;
+    }
     p8_send_cec_frame(frame);
 }
 

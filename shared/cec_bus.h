@@ -35,7 +35,7 @@
 #  define ESP_ERR_INVALID_ARG -2
 #endif
 
-/* GPIO to use for CEC.  XIAO ESP32-C6 pad D3 = GPIO21; XIAO RP2350 pad D3 = GPIO29. */
+/* GPIO to use for CEC.  XIAO ESP32-C6 pad D3 = GPIO21; XIAO RP2350 pad D3 = GPIO5. */
 #define CEC_DEFAULT_GPIO    21
 
 /* Maximum number of payload bytes in one CEC frame (header + 14 data + EOM). */

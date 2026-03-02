@@ -1,0 +1,11 @@
+# Impulse CEC — udev rules
+#
+# Install:
+#   sudo cp 99-impulse-cec.rules /etc/udev/rules.d/
+#   sudo udevadm control --reload-rules && sudo udevadm trigger
+#
+# RP2350 (VID 0x2E8A / PID 0x1000)
+# ---------------------------------
+# Enable USB remote wakeup so the adapter can wake the PC from suspend
+# when it receives a CEC power-on or Set Stream Path command.
+ACTION=="add", SUBSYSTEM=="usb", ATTRS{idVendor}=="2e8a", ATTRS{idProduct}=="1000", ATTR{power/wakeup}="enabled"

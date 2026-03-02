@@ -8,7 +8,7 @@ Supports two boards:
 
 | | Seeed XIAO ESP32-C6 | Seeed XIAO RP2350 |
 |---|---|---|
-| CEC GPIO | GPIO21 (pad D3) | GPIO29 (pad D3) |
+| CEC GPIO | GPIO21 (pad D3) | GPIO5 (pad D3) |
 | USB | Serial/JTAG — fixed VID:PID `0x303A:0x1001` | TinyUSB — `0x2E8A:0x1000` |
 | libCEC auto-detect | No (specify port with `-t p`) | No (PID not yet registered) |
 | Settings storage | NVS | Flash (last sector) |
@@ -21,7 +21,7 @@ Supports two boards:
 
 | XIAO pad | ESP32-C6 GPIO | RP2350 GPIO | Connect to   |
 |----------|---------------|-------------|--------------|
-| D3       | GPIO21        | GPIO29      | HDMI CEC pin |
+| D3       | GPIO21        | GPIO5       | HDMI CEC pin |
 | GND      | —             | —           | HDMI GND     |
 
 The firmware enables an internal pull-up on the CEC line (~47kΩ on ESP32-C6, configurable on RP2350). No external pull-up is required for direct connections or short cables. For long cable runs, an optional 27kΩ resistor from CEC to 3.3V (paralleling to ~18kΩ) improves signal integrity.
@@ -102,6 +102,25 @@ The driver sets PA=1.0.0.0, claims logical address 4 (Playback Device), and enab
 SUBSYSTEM=="cec", ACTION=="add", RUN+="/usr/bin/cec-ctl -d /dev/%k -p 1.0.0.0"
 ```
 
+### Wake-on-CEC (RP2350 only)
+
+The RP2350 firmware can wake the PC from suspend when it receives a CEC power-on command or a `Set Stream Path` addressed to the dongle's physical address. For this to work, Linux must enable USB remote wakeup for the device.
+
+Install the included udev rule to enable it automatically:
+
+```bash
+sudo cp udev/99-impulse-cec.rules /etc/udev/rules.d/
+sudo udevadm control --reload-rules && sudo udevadm trigger
+```
+
+Verify it took effect:
+
+```bash
+cat /sys/bus/usb/devices/$(ls /sys/bus/usb/drivers/usb/ | \
+  xargs -I{} sh -c 'cat /sys/bus/usb/drivers/usb/{}/idVendor 2>/dev/null | grep -q 2e8a && echo {}')/power/wakeup
+# should print: enabled
+```
+
 ## Architecture
 
 Both targets share the same protocol implementation (`shared/p8_protocol.c`) through a thin platform abstraction layer (`shared/platform.h`). The CEC bus driver is platform-specific.
@@ -128,6 +147,8 @@ HDMI CEC line
 ```
 impulse-cec/
 ├── Makefile
+├── udev/
+│   └── 99-impulse-cec.rules  — enables USB remote wakeup on Linux
 ├── shared/                 — portable sources (both targets)
 │   ├── cec_bus.h           — CEC driver interface + portability typedefs
 │   ├── platform.h          — platform abstraction (USB write, KV store, mutex)
