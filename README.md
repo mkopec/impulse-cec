@@ -1,37 +1,66 @@
-# ESP32-C6 Pulse-Eight CEC Dongle
+# Pulse-Eight CEC Dongle
 
-A Pulse-Eight compatible USB CEC adapter running on the Seeed XIAO ESP32-C6. It presents over USB as a standard serial port and speaks the P8 binary protocol, making it compatible with both **libCEC** (`cec-client`) and the **Linux kernel `pulse8-cec` driver** (`inputattach`).
+A Pulse-Eight compatible USB CEC adapter that speaks the P8 binary protocol, compatible with both **libCEC** (`cec-client`) and the **Linux kernel `pulse8-cec` driver** (`inputattach`).
+
+Supports two boards:
+
+| | Seeed XIAO ESP32-C6 | Seeed XIAO RP2350 |
+|---|---|---|
+| CEC GPIO | GPIO21 (pad D3) | GPIO29 (pad D3) |
+| USB | Serial/JTAG — fixed VID:PID `0x303A:0x1001` | TinyUSB — `0x2E8A:0x1000` |
+| libCEC auto-detect | No (specify port with `-t p`) | No (PID not yet registered) |
+| Settings storage | NVS | Flash (last sector) |
+| USB remote wakeup | No | Yes |
+| Build system | ESP-IDF v6.x | Pico SDK |
 
 ## Hardware
 
-**Board:** Seeed XIAO ESP32-C6
+**Wiring (both boards — same physical pin):**
 
-**Wiring:**
+| XIAO pad | ESP32-C6 GPIO | RP2350 GPIO | Connect to   |
+|----------|---------------|-------------|--------------|
+| D3       | GPIO21        | GPIO29      | HDMI CEC pin |
+| GND      | —             | —           | HDMI GND     |
 
-| XIAO pin | GPIO   | Connect to       |
-|----------|--------|------------------|
-| D3       | GPIO21 | HDMI CEC pin     |
-| GND      | —      | HDMI GND         |
+The firmware enables an internal pull-up on the CEC line (~47kΩ on ESP32-C6, configurable on RP2350). No external pull-up is required for direct connections or short cables. For long cable runs, an optional 27kΩ resistor from CEC to 3.3V (paralleling to ~18kΩ) improves signal integrity.
 
-The firmware enables the ESP32-C6 internal ~47kΩ pull-up on the CEC line. No external pull-up is required for direct connections or short cables. For long cable runs, an optional external 27kΩ resistor from CEC to 3.3V (paralleling to ~18kΩ) improves signal integrity.
-
-**USB note:** The ESP32-C6 has a USB Serial/JTAG peripheral (not full USB OTG), so it appears with a fixed Espressif VID:PID (`0x303A:0x1001`). libCEC won't auto-detect it as Pulse-Eight — specify the port explicitly (see [Usage](#usage)).
-
-## Building and Flashing
-
-Requires [ESP-IDF v6.1.0](https://docs.espressif.com/projects/esp-idf/en/latest/esp32c6/).
+## Building
 
 ```bash
-# One-time: source the IDF environment (required each new shell session)
-. $IDF_PATH/export.sh
+# ESP32-C6 (source ESP-IDF first)
+. /path/to/esp-idf/export.sh
+make esp32
 
-# One-time: set the target
-idf.py set-target esp32c6
+# RP2350
+make rp2350 PICO_SDK_PATH=~/pico-sdk
 
-# Build, flash, and open serial monitor
-idf.py build
-idf.py -p /dev/ttyACM0 flash monitor
+# Both
+make all PICO_SDK_PATH=~/pico-sdk
 ```
+
+Run `make help` for all available targets (flash, monitor, clean, …).
+
+### Toolchain setup
+
+**ESP32-C6:** requires [ESP-IDF v6.x](https://docs.espressif.com/projects/esp-idf/en/latest/esp32c6/). Source `export.sh` in each new shell before building.
+
+**RP2350:** requires the [Pico SDK](https://github.com/raspberrypi/pico-sdk) and a CMake ≥ 3.13 + ARM toolchain. Set `PICO_SDK_PATH` in the environment or on the `make` command line.
+
+## Flashing
+
+**ESP32-C6:**
+
+```bash
+make flash-esp32 PORT=/dev/ttyACM0
+```
+
+**RP2350:**
+
+```bash
+make flash-rp2350       # uses picotool if available
+```
+
+Or manually: hold BOOTSEL, plug in the board, then copy `rp2350/build/esp32-p8-rp2350.uf2` to the `RPI-RP2` drive.
 
 ## Usage
 
@@ -41,11 +70,11 @@ idf.py -p /dev/ttyACM0 flash monitor
 cec-client -t p /dev/ttyACM0
 ```
 
-The `-t p` flag selects Pulse-Eight adapter type. On macOS use `/dev/cu.usbmodem*`; on Windows use `COMx`.
+The `-t p` flag selects Pulse-Eight adapter type. Specify the port explicitly — neither board's VID:PID is registered for libCEC auto-detection yet. On macOS use `/dev/cu.usbmodem*`; on Windows use `COMx`.
 
 ### Linux kernel driver (inputattach)
 
-The kernel `pulse8-cec` driver enables TV remote button presses to generate standard Linux input events and allows sending CEC commands directly from the kernel CEC subsystem.
+The `pulse8-cec` driver exposes the adapter as a standard Linux CEC device. TV remote presses generate input events; CEC commands can be sent with `cec-ctl`.
 
 #### One-time system setup
 
@@ -54,7 +83,7 @@ echo "options pulse8-cec persistent_config=1" | sudo tee /etc/modprobe.d/pulse8-
 sudo modprobe -r pulse8-cec && sudo modprobe pulse8-cec
 ```
 
-The `persistent_config=1` parameter is required for the driver to automatically claim a logical address on startup.
+`persistent_config=1` is required for the driver to automatically claim a logical address on startup.
 
 #### Attach the adapter
 
@@ -62,7 +91,7 @@ The `persistent_config=1` parameter is required for the driver to automatically 
 sudo inputattach -p8 /dev/ttyACM0
 ```
 
-The driver will set PA=1.0.0.0, claim logical address 4 (Playback Device), and enable the ACK mask. TV remote presses will appear as Linux input events; CEC commands (e.g. standby) can be sent via `cec-ctl`.
+The driver sets PA=1.0.0.0, claims logical address 4 (Playback Device), and enables the ACK mask.
 
 #### Alternative: udev rule (no modprobe change needed)
 
@@ -73,36 +102,49 @@ SUBSYSTEM=="cec", ACTION=="add", RUN+="/usr/bin/cec-ctl -d /dev/%k -p 1.0.0.0"
 
 ## Architecture
 
+Both targets implement the same P8 protocol logic (`shared/p8_protocol.c`) over a platform abstraction layer (`shared/platform.h`). The CEC driver is platform-specific.
+
 ```
-USB Serial/JTAG (CDC ACM)
-        │
-        ▼
-  p8_protocol.c        — Pulse-Eight binary protocol parser/encoder
-        │
-        ▼
-   cec_bus.c           — Open-drain bit-bang CEC driver on GPIO21
-        │
-        ▼
-  HDMI CEC line
+USB (CDC ACM)
+      │
+      ▼
+p8_protocol.c      shared — Pulse-Eight binary protocol parser/encoder
+      │
+      ▼
+cec_bus.c          platform-specific — open-drain bit-bang CEC driver
+      │
+      ▼
+HDMI CEC line
 ```
 
-**CEC RX:** GPIO ANYEDGE ISR → edge-event queue → high-priority decoder task
+**ESP32-C6:** GPIO ANYEDGE ISR → edge-event queue → FreeRTOS decoder task. TX uses `esp_timer` ISR callbacks to chain waveform phases without busy-waiting.
 
-**CEC TX:** `esp_timer` callbacks chain through waveform phases (no busy-waiting). ACK generation is driven from ISR context for accurate timing.
-
-**Settings** are persisted in NVS (`p8` namespace) and survive power cycles.
+**RP2350:** GPIO IRQ stores edges in a ring buffer. Main loop drains it via `cec_rx_process()`. TX uses hardware alarms for phase transitions. TX results are deferred to the main loop so TinyUSB writes never happen from IRQ context.
 
 ## Project Structure
 
 ```
 esp32-p8/
-├── CMakeLists.txt
-├── sdkconfig.defaults        — USB CDC config, 1kHz FreeRTOS tick, ISR timer
-└── main/
+├── Makefile
+├── shared/                 — portable sources (both targets)
+│   ├── cec_bus.h           — CEC driver interface + portability typedefs
+│   ├── platform.h          — platform abstraction (USB write, KV store, mutex)
+│   ├── p8_protocol.h
+│   └── p8_protocol.c
+├── esp32/                  — ESP-IDF project (cd here for idf.py)
+│   ├── CMakeLists.txt
+│   ├── sdkconfig.defaults
+│   └── main/
+│       ├── CMakeLists.txt
+│       ├── cec_bus.c       — ESP32-C6 CEC driver (GPIO ISR + FreeRTOS tasks)
+│       └── main.c          — app_main: NVS init, USB Serial/JTAG, tasks
+└── rp2350/                 — Pico SDK project (cd here for cmake)
     ├── CMakeLists.txt
-    ├── cec_bus.h / cec_bus.c  — GPIO open-drain CEC bit-bang driver
-    ├── p8_protocol.h / .c     — Pulse-Eight serial protocol handler
-    └── main.c                 — Initialisation and USB RX task
+    ├── tusb_config.h
+    ├── cec_bus.c           — RP2350 CEC driver (GPIO IRQ + hardware alarms)
+    ├── main.c              — main loop: tud_task + cec_rx_process + cec_bus_tick
+    ├── flash_kv.h / .c     — settings in last flash sector
+    └── usb_descriptors.c   — TinyUSB CDC descriptors (VID=0x2E8A PID=0x1000)
 ```
 
 ## CEC Timing

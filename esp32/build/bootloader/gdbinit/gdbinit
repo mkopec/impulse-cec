@@ -1,0 +1,2 @@
+source /home/michal/Development/esp32-p8/esp32/build/bootloader/gdbinit/symbols
+source /home/michal/Development/esp32-p8/esp32/build/bootloader/gdbinit/connect
