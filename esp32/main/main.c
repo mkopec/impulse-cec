@@ -1,4 +1,8 @@
 /*
+ * SPDX-License-Identifier: GPL-3.0-or-later
+ */
+
+/*
  * main.c — ESP32-C6 Pulse-Eight CEC Dongle
  *
  * Wiring

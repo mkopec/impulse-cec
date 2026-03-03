@@ -1,4 +1,8 @@
 /*
+ * SPDX-License-Identifier: GPL-3.0-or-later
+ */
+
+/*
  * p8_protocol.c — Pulse-Eight USB CEC adapter serial protocol handler.
  *
  * Wire format (libCEC 7.x, symmetric — same framing both directions):

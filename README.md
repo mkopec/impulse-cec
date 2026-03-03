@@ -1,3 +1,7 @@
+<!--
+SPDX-License-Identifier: GPL-3.0-or-later
+-->
+
 # Impulse CEC
 
 A USB CEC dongle for the Seeed XIAO ESP32-C6 and XIAO RP2350. It bit-bangs the HDMI CEC bus and exposes it over USB serial using the open P8 adapter protocol, making it work out of the box with **libCEC** (`cec-client`) and the **Linux kernel `pulse8-cec` driver** (`inputattach`).

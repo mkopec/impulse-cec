@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 # Pulse-Eight CEC Dongle — top-level build wrapper
 #
 # Prerequisites

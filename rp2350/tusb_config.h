@@ -1,4 +1,8 @@
 /*
+ * SPDX-License-Identifier: GPL-3.0-or-later
+ */
+
+/*
  * tusb_config.h — TinyUSB configuration for impulse-cec RP2350 build.
  *
  * CFG_TUSB_MCU is injected by the Pico SDK CMake integration.

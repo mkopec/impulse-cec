@@ -1,4 +1,8 @@
 /*
+ * SPDX-License-Identifier: GPL-3.0-or-later
+ */
+
+/*
  * main.c — RP2350 Pulse-Eight CEC Dongle (XIAO RP2350)
  *
  * Wiring

@@ -1,4 +1,8 @@
 /*
+ * SPDX-License-Identifier: GPL-3.0-or-later
+ */
+
+/*
  * cec_bus.c — CEC single-wire bit-bang driver for ESP32-C6.
  *
  * Architecture

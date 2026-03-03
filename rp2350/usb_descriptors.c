@@ -1,4 +1,8 @@
 /*
+ * SPDX-License-Identifier: GPL-3.0-or-later
+ */
+
+/*
  * usb_descriptors.c — TinyUSB CDC device/configuration/string descriptors.
  *
  * VID 0x2E8A = Raspberry Pi Foundation

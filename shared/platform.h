@@ -1,4 +1,8 @@
 /*
+ * SPDX-License-Identifier: GPL-3.0-or-later
+ */
+
+/*
  * platform.h — thin portability layer for p8_protocol.c
  *
  * Provides:

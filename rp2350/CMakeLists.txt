@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 cmake_minimum_required(VERSION 3.13)
 
 # Point to the Pico SDK.  Override via environment or -DPICO_SDK_PATH=...

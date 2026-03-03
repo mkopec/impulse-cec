@@ -1,4 +1,8 @@
 /*
+ * SPDX-License-Identifier: GPL-3.0-or-later
+ */
+
+/*
  * flash_kv.c — key-value settings store backed by one flash sector.
  *
  * Layout: last sector of flash (offset = PICO_FLASH_SIZE_BYTES - FLASH_SECTOR_SIZE).

@@ -1,4 +1,8 @@
 /*
+ * SPDX-License-Identifier: GPL-3.0-or-later
+ */
+
+/*
  * flash_kv.h — simple key-value settings store backed by one flash sector.
  *
  * Settings are kept in a 256-byte struct at the last flash sector.
